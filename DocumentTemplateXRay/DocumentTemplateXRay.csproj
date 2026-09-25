@@ -8,7 +8,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <Company>Comentality</Company>
     <Authors>Comentality</Authors>
-    <Description>Extract Dynamics 365 field references from Word document templates (XRay). Analyzes DOCX templates to reveal all entity fields, conditions, and relationships used.</Description>
+    <Description>See every field, relationship and repeating section a Word document template uses, as a flat list or a tree. Reads the content controls inside a Dynamics 365 .docx template, so you don't have to click through them one at a time.</Description>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <NuspecFile>DocumentTemplateXRay.nuspec</NuspecFile>
   </PropertyGroup>

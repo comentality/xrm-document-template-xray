@@ -6,7 +6,7 @@
     <title>Document Template XRay</title>
     <authors>Comentality</authors>
     <license type="expression">MIT</license>
-    <projectUrl>https://github.com/comentality/xrm-document-template-xray</projectUrl>
+    <projectUrl>https://comentality.com/tools/#document-template-xray</projectUrl>
     <repository type="git" url="https://github.com/comentality/xrm-document-template-xray.git" branch="main" />
     <icon>icon.png</icon>
     <readme>docs\README.md</readme>

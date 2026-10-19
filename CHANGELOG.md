@@ -46,13 +46,11 @@ and tested, and stays here.
   once rather than twice, and a table's metadata is fetched once rather than again for every
   template that uses it.
 
-- **The tool's description in XrmToolBox and on NuGet now says what it shows you, in plain
-  words.** "See every field, relationship and repeating section a Word document template uses,
-  as a flat list or a tree."
-
 - The package's project page is now
   [comentality.com/tools](https://comentality.com/tools/#document-template-xray); the
-  repository link stays on GitHub.
+  repository link stays on GitHub. Its description, in XrmToolBox and on NuGet, now says what
+  the tool shows you: "See every field, relationship and repeating section a Word document
+  template uses, as a flat list or a tree."
 - `tests/slow.ps1` hosts the real control against a fake Dataverse with per-call latency and
   scripted failures, and plays twelve scenarios of ordinary gestures through it, with a
   screenshot per gesture. Every fix above is one of its scenarios, each red against the code

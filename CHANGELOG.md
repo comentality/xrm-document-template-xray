@@ -5,7 +5,7 @@ bolded is something you will notice in the tool, and that sentence is what goes 
 page and in the XrmToolBox Tool Library; a bullet without one is about how the tool is built
 and tested, and stays here.
 
-## Unreleased — 1.2.21
+## 1.2.21 — 22 October 2026
 
 - **Nothing in the tool can be pressed while an answer from the environment is still on its
   way.** The panel XrmToolBox draws while a tool waits is a small box in the middle of it that

@@ -23,4 +23,10 @@
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- The org mark on the About button. It travels inside the assembly, because the package
+         ships this one dll and nothing beside it. -->
+    <EmbeddedResource Include="About\comentality-16.png" />
+  </ItemGroup>
 </Project>

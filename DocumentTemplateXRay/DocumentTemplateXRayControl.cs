@@ -5,18 +5,23 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using Comentality.Xtb.About;
 using DocumentTemplateXRay.Logic;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Query;
 using McTools.Xrm.Connection;
 using XrmToolBox.Extensibility;
+using XrmToolBox.Extensibility.Interfaces;
 using Label = System.Windows.Forms.Label;
 
 namespace DocumentTemplateXRay
 {
-    public partial class DocumentTemplateXRayControl : PluginControlBase
+    public partial class DocumentTemplateXRayControl : PluginControlBase, IAboutPlugin
     {
+        /// <summary>The org mark inside the assembly - RootNamespace, then the folder it sits in.</summary>
+        private const string HouseMarkResource = "DocumentTemplateXRay.About.comentality-16.png";
+
         private List<FieldInfo> _currentFields;
         private readonly List<TemplateItem> _templates = new List<TemplateItem>();
 
@@ -72,6 +77,8 @@ namespace DocumentTemplateXRay
         private Panel _leftToolbar;
         private Button _btnFetch;
         private Button _btnBrowseLocal;
+        private Button _btnAbout;
+        private ToolTip _aboutTip;
         private ListView _lvTemplates;
 
         // Controls - right panel
@@ -138,8 +145,33 @@ namespace DocumentTemplateXRay
             };
             _btnBrowseLocal.Click += BtnBrowseLocal_Click;
 
+            // The word stays and the mark goes in front of it: this is the one button in the
+            // window about who made the tool rather than about a template, and the mark says so
+            // before the word is read. It lives on this toolbar because the one over the fields
+            // is hidden until a template is open, and who made the tool should not depend on
+            // that. UpdateState leaves it alone for the same reason: nothing on the wire has
+            // any bearing on it.
+            _btnAbout = new Button
+            {
+                Text = "About",
+                Image = HouseMark(),
+                TextImageRelation = TextImageRelation.ImageBeforeText,
+                AutoSize = true,
+                Top = 5,
+                Width = 80,
+                Height = 28
+            };
+            _btnAbout.Click += (s, e) => ShowAbout();
+            _btnAbout.SizeChanged += (s, e) => LayoutLeftToolbar();
+
+            _aboutTip = new ToolTip();
+            _aboutTip.SetToolTip(_btnAbout, "What this is, which build you have, and where to say it is wrong.");
+            Disposed += (s, e) => _aboutTip.Dispose();
+
             _leftToolbar.Controls.Add(_btnFetch);
             _leftToolbar.Controls.Add(_btnBrowseLocal);
+            _leftToolbar.Controls.Add(_btnAbout);
+            _leftToolbar.Resize += (s, e) => LayoutLeftToolbar();
 
             _lvTemplates = new ListView
             {
@@ -292,6 +324,45 @@ namespace DocumentTemplateXRay
             Size = new Size(1000, 600);
 
             ResumeLayout(false);
+        }
+
+        /// <summary>The host's own way in to the same box the toolbar opens.</summary>
+        public void ShowAboutDialog()
+        {
+            ShowAbout();
+        }
+
+        /// <summary>
+        /// What this is, where it came from, and how to say it is wrong. The box is built from
+        /// the plugin class's own metadata, so the name and description in it are the ones
+        /// XrmToolBox shows in its tools list. There are no notices to add: nothing somebody else
+        /// wrote travels inside this assembly.
+        /// </summary>
+        private void ShowAbout()
+        {
+            AboutBox.Show(this, ToolAbout.FromPlugin(
+                typeof(DocumentTemplateXRayPlugin), "document-template-xray",
+                "https://github.com/comentality/xrm-document-template-xray"));
+        }
+
+        /// <summary>
+        /// The Comentality mark, at the size a button wants it, or null if the assembly was built
+        /// without it. Already at 16 rather than shrunk on the way there: at this size the flag's
+        /// silhouette is the whole of what is legible, and a scaled tile comes out soft.
+        /// </summary>
+        private static Image HouseMark()
+        {
+            // The stream behind an Image has to outlive it, so the bitmap is copied off it and
+            // the stream let go here rather than kept open for the life of the window.
+            using (var stream = typeof(DocumentTemplateXRayControl).Assembly.GetManifestResourceStream(HouseMarkResource))
+            {
+                if (stream == null) return null;
+
+                using (var loaded = new Bitmap(stream))
+                {
+                    return new Bitmap(loaded);
+                }
+            }
         }
 
         /// <summary>
@@ -854,6 +925,14 @@ namespace DocumentTemplateXRay
                     : Color.FromArgb(180, 120, 0);
 
             LayoutToolbar();
+        }
+
+        // About sits against the right edge of its toolbar until the pane gets too narrow for
+        // that, and then stops beside Fetch and runs off the edge: a button cut short is still
+        // a button, and one lying on top of Fetch would be taking its clicks.
+        private void LayoutLeftToolbar()
+        {
+            _btnAbout.Left = Math.Max(_leftToolbar.ClientSize.Width - _btnAbout.Width - 5, _btnFetch.Right + 8);
         }
 
         // The field count sits hard against the right edge and the view radios pack in to its

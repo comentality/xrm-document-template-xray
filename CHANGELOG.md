@@ -7,6 +7,18 @@ and tested, and stays here.
 
 ## Unreleased
 
+- **An About button says which build you have, where the tool lives and how to report a fault.**
+  It sits at the right of the toolbar over the template list, with the Comentality mark in front
+  of the word, so it is there before anything is connected or opened. The box takes its name,
+  description and logo from the tool's own tile, links to its page, its release notes and its
+  source, and **Copy diagnostics** puts your versions on the clipboard for a bug report, with
+  nothing about your environment among them.
+
+  ![About, with the Comentality mark in front of the word](docs/changelog/about-button.png)
+
+- `tests/slow.ps1` has a thirteenth scenario, `about`. It presses the real button while a fetch
+  is out, reads what the box was told, and checks the button still fits at 640 and 520 wide.
+
 ## 1.2.21 — 22 October 2026
 
 - **Nothing in the tool can be pressed while an answer from the environment is still on its

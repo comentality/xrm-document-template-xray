@@ -40,6 +40,12 @@ namespace DocumentTemplateXRay.SlowHarness
         /// <summary>Captions of every dialog the tool put up, in order, closed as they appeared.</summary>
         public readonly List<string> Dialogs = new List<string>();
 
+        /// <summary>
+        /// Handed each window of the tool's own just before it is closed, for a scenario with
+        /// questions about what is in it. A message box is not one: it is Windows's, not a Form.
+        /// </summary>
+        public Action<Form> BeforeClosing;
+
         public Stopwatch Clock = new Stopwatch();
 
         public void Check(bool ok, string what)
@@ -383,6 +389,10 @@ namespace DocumentTemplateXRay.SlowHarness
                 if (text.Length == 0) return true;
 
                 _run.Dialogs.Add(text);
+
+                var form = Control.FromHandle(hwnd) as Form;
+                if (form != null && _run.BeforeClosing != null) _run.BeforeClosing(form);
+
                 PostMessage(hwnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
                 return true;
             }, IntPtr.Zero);

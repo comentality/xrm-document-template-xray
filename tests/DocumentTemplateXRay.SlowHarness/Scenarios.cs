@@ -1,7 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Windows.Forms;
+using Comentality.Xtb.About;
 using DocumentTemplateXRay.Harness;
+using XrmToolBox.Extensibility.Interfaces;
+// One class of it rather than the namespace, which has a Capture of its own.
+using Regex = System.Text.RegularExpressions.Regex;
 
 namespace DocumentTemplateXRay.SlowHarness
 {
@@ -52,6 +59,7 @@ namespace DocumentTemplateXRay.SlowHarness
                 ConnectingFetchesItself(),
                 SwitchMidFetch(),
                 QueuedFetchSurvivesConnecting(),
+                AboutButton(),
             };
         }
 
@@ -462,6 +470,124 @@ namespace DocumentTemplateXRay.SlowHarness
                         "once, not once for the button and once for the arrival: the org was asked "
                         + r.Service.Log("templates").Count + " times");
                 });
+        }
+
+        /// <summary>
+        /// About has nothing to do with the wire, so nothing on the wire should reach it: it is
+        /// there on the empty window the tool opens to, and live while a fetch is out. The box is
+        /// the real one, opened by the real button, so what is checked in it is what the tool
+        /// passes rather than a second copy of the same strings. The rest is room: the toolbar
+        /// has fixed buttons in it, and halves with the window.
+        /// </summary>
+        private static Scenario AboutButton()
+        {
+            return new Scenario
+            {
+                Name = "about",
+                Why = "About must be reachable whatever the window is doing, and must say which build this is",
+                Wire = s => s.Latency = Slow("templates", 1500)
+            }
+                .At(200, "the empty window the tool opens to", r =>
+                {
+                    r.BeforeClosing = form => ReadTheBox(r, form as AboutBox);
+
+                    r.Check(r.Probe.About.Image != null, "the house mark should be in front of the word");
+                    r.Check(r.Probe.About.Text == "About", "the word should stay: " + r.Probe.About.Text);
+                    r.Check(r.Probe.Field<ToolTip>("_aboutTip").GetToolTip(r.Probe.About).Length > 0,
+                        "the button should say what it is for when hovered");
+                    Fits(r, "at full size");
+                })
+                .At(300, "press Fetch", r => r.Probe.PressFetch())
+                .At(500, "press About while it is out", r =>
+                {
+                    r.Check(!r.Probe.Fetch.Enabled, "the fetch should still be out");
+                    r.Check(r.Probe.About.Enabled, "About should be live, as nothing it says is on the wire");
+
+                    r.Probe.About.PerformClick();
+
+                    r.Check(r.Dialogs.Contains("About Document Template XRay"),
+                        "the button should open the box, and what came up was: " + string.Join(", ", r.Dialogs));
+                })
+                .At(700, "XrmToolBox asks for the same box", r =>
+                {
+                    var host = r.Control as IAboutPlugin;
+                    r.Check(host != null, "the control should offer the host its About");
+
+                    var before = r.Dialogs.Count;
+                    if (host != null) host.ShowAboutDialog();
+
+                    r.Check(r.Dialogs.Count == before + 1, "the host's way in should open the box too");
+                })
+                .At(2500, "a template open at full size", r =>
+                {
+                    r.Check(r.Probe.TemplateNames().Contains(Summary),
+                        "the fetch should have landed behind the box");
+                    r.Probe.SelectTemplate(Summary);
+                    Fits(r, "with a template open");
+                })
+                .At(3500, "a narrow window", r => r.Form.ClientSize = new Size(640, 480))
+                .At(3700, "which still has room for it", r => Fits(r, "at 640 wide"))
+                .At(3900, "the narrowest window with room", r => r.Form.ClientSize = new Size(520, 480))
+                .At(4100, "and there it still fits", r => Fits(r, "at 520 wide"))
+                .At(4300, "the splitter dragged past that", r =>
+                    r.Probe.Field<SplitContainer>("_splitContainer").SplitterDistance = 200)
+                .At(4500, "it stops short of Fetch", r => Clear(r, "with the left pane at 200"));
+        }
+
+        /// <summary>The whole button on its toolbar, and nothing under it.</summary>
+        private static void Fits(Run r, string when)
+        {
+            var about = r.Probe.About;
+
+            r.Check(about.Visible, "About should be showing " + when);
+            r.Check(about.Parent.ClientRectangle.Contains(about.Bounds),
+                "About should be whole " + when + ", at " + about.Bounds + " on a toolbar "
+                + about.Parent.ClientSize.Width + " wide");
+            r.Check(about.Right == about.Parent.ClientSize.Width - 5,
+                "About should be against the right edge " + when + ", and ends at " + about.Right);
+            r.Check(about.Width >= about.PreferredSize.Width,
+                "the mark and the word should have the room they ask for " + when);
+            Clear(r, when);
+        }
+
+        private static void Clear(Run r, string when)
+        {
+            r.Check(!r.Probe.About.Bounds.IntersectsWith(r.Probe.Fetch.Bounds)
+                    && !r.Probe.About.Bounds.IntersectsWith(r.Probe.Browse.Bounds),
+                "About should not lie on the buttons beside it " + when);
+        }
+
+        /// <summary>
+        /// The questions nobody can answer by looking at the code: what the box was told, and
+        /// that the build it names is one somebody could type back into a bug report. The rest
+        /// of what the box does is the same file in every tool, and Icons' tests have it.
+        /// </summary>
+        private static void ReadTheBox(Run r, AboutBox box)
+        {
+            const string repository = "https://github.com/comentality/xrm-document-template-xray";
+
+            r.Check(box != null, "the window that came up should be the About box");
+            if (box == null) return;
+
+            var about = r.Probe.SaidBy(box);
+
+            r.Check(Regex.IsMatch(about.Version, @"^\d+\.\d+\.\d+(-[\w.]+)? \([0-9a-f]{7}\)$"),
+                "the version should be the version and the commit, and is: " + about.Version);
+            r.Check(about.Name == "Document Template XRay", "the name should be the tile's: " + about.Name);
+            r.Check((about.Description ?? "").StartsWith("See every field", StringComparison.Ordinal),
+                "the description should be the tile's: " + about.Description);
+            r.Check(about.Logo != null, "the box should show the tile's logo");
+            r.Check(about.PageUrl == "https://comentality.com/tools/#document-template-xray",
+                "the page should be the tool's section of the site: " + about.PageUrl);
+            r.Check(about.RepositoryUrl == repository, "the repository is wrong: " + about.RepositoryUrl);
+            r.Check(about.ReleaseNotesUrl == repository + "/releases/latest",
+                "the release notes are wrong: " + about.ReleaseNotesUrl);
+            r.Check(about.Notices == null, "nothing here is redistributed, so there is nothing to credit");
+            r.Check(about.MailTo().ToString().Length < 1500,
+                "shell execute truncates a long mailto, and this one is "
+                + about.MailTo().ToString().Length);
+
+            Capture.Of(box, Path.Combine(r.ShotDir, "about-box.png"));
         }
     }
 }

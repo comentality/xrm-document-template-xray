@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
+using Comentality.Xtb.About;
 // The tool has a FieldInfo of its own and reflection has one too, and this file uses both.
 using FieldInfo = DocumentTemplateXRay.Logic.FieldInfo;
 
@@ -39,6 +40,7 @@ namespace DocumentTemplateXRay.SlowHarness
 
         public Button Fetch { get { return Field<Button>("_btnFetch"); } }
         public Button Browse { get { return Field<Button>("_btnBrowseLocal"); } }
+        public Button About { get { return Field<Button>("_btnAbout"); } }
 
         public ListView Templates { get { return Field<ListView>("_lvTemplates"); } }
         public ListView Fields { get { return Field<ListView>("_lvFields"); } }
@@ -86,6 +88,12 @@ namespace DocumentTemplateXRay.SlowHarness
                             && i.SubItems[2].Text.Length > 0)
                 .Select(i => i.Text)
                 .ToList();
+        }
+
+        /// <summary>What an open About box was told to say, which is what the tool really passed it.</summary>
+        public ToolAbout SaidBy(AboutBox box)
+        {
+            return (ToolAbout)typeof(AboutBox).GetField("_about", Priv).GetValue(box);
         }
 
         // ===== what a user does =====

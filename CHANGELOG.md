@@ -5,6 +5,8 @@ bolded is something you will notice in the tool, and that sentence is what goes 
 page and in the XrmToolBox Tool Library; a bullet without one is about how the tool is built
 and tested, and stays here.
 
+## Unreleased
+
 ## 1.2.22 — 3 November 2026
 
 - **An About button says which build you have, where the tool lives and how to report a fault.**
